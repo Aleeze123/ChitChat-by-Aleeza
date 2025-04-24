@@ -1,6 +1,7 @@
-import axios from "axios";
+// lib/axios.js
 
 export const axiosInstance = axios.create({
-  baseURL: import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api",
+  baseURL: "https://chitchat-by-aleeza.railway.app/api", // ✅ this is very important!
   withCredentials: true,
 });
+
