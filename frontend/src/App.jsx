@@ -9,22 +9,40 @@ import ProfilePage from "./pages/ProfilePage";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
+// Define the backend URL (Railway app URL)
+const backendURL = "https://chitchat-by-aleeza.railway.app";  
+
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { theme } = useThemeStore();
-
-  console.log({ onlineUsers });
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  console.log({ authUser });
+  // Fetch data (e.g., messages) from backend
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch(`${backendURL}/api/messages`); // Use the backend URL
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  // Fetch messages when user is authenticated
+  useEffect(() => {
+    if (authUser) {
+      fetchMessages();
+    }
+  }, [authUser]);
 
   if (isCheckingAuth && !authUser)
     return (
@@ -49,4 +67,6 @@ const App = () => {
     </div>
   );
 };
+
 export default App;
+
