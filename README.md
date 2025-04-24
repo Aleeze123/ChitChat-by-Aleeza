@@ -23,5 +23,4 @@ You can check out the live demo of the app deployed on Vercel:
 1. Clone the repository to your local machine:
 
    ```bash
-   git clone https://github.com/your-username/chitchat.git
-   cd chitchat
+   git clone https://github.com/Aleeze123/ChitChat-by-Aleeza.git
