@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+     origin: "https://chit-chat-by-aleeza-s73i.vercel.app/login",
     credentials: true,
   })
 );
