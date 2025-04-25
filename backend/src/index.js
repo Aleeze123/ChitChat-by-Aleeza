@@ -1,4 +1,3 @@
-
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -16,39 +15,52 @@ dotenv.config();
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
-// ✅ CORS allowed origins
-const allowedOrigins = [
-  "http://localhost:5173", // Local development URL
-  "https://chit-chat-by-aleeza-s73i.vercel.app", // Your Vercel frontend
-  "https://chitchat-by-aleeza.railway.app", // If you're hosting on Railway (add as necessary)
-];
-
-// ✅ Middleware setup
-app.use(express.json());
-app.use(cookieParser());
+// ✅ CORS Middleware with Vercel Preview Wildcard Support
 app.use(
   cors({
-    origin: allowedOrigins,  // Dynamic CORS origins
-    credentials: true,  // Allow cookies and other credentials
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://chit-chat-by-aleeza-s73i.vercel.app",
+        "https://chitchat-by-aleeza.railway.app",
+      ];
+
+      // ✅ Allow Vercel Preview Deploys
+      const vercelPreviewRegex = /^https:\/\/chit-chat-by-aleeza-[\w-]+\.vercel\.app$/;
+
+      if (
+        !origin || // allow server-to-server or mobile apps
+        allowedOrigins.includes(origin) ||
+        vercelPreviewRegex.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS: " + origin));
+      }
+    },
+    credentials: true,
   })
 );
 
-// ✅ Routes setup
+// ✅ Body parsing and cookie setup
+app.use(express.json());
+app.use(cookieParser());
+
+// ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// ✅ Serve frontend in production (only when NODE_ENV is 'production')
+// ✅ Serve frontend static files (only in production)
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist"))); // Serve the build files
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-  // Handle all other routes by sending the frontend index.html
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
 }
 
-// ✅ Start the HTTP server and WebSocket server
+// ✅ Start the server
 server.listen(PORT, () => {
-  console.log("Server is running on PORT:" + PORT);
-  connectDB();  // Make sure to connect to the database
+  console.log("✅ Server is running on PORT:", PORT);
+  connectDB();
 });
