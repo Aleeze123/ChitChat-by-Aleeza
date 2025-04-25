@@ -19,8 +19,8 @@ const __dirname = path.resolve();
 const allowedOrigins = [
   "http://localhost:5173", // Local development URL
   "https://chit-chat-by-aleeza-s73i.vercel.app", // Your Vercel frontend
-  "https://chit-chat-by-aleeza-s73i-c79d5rt41-aleeze123s-projects.vercel.app", // Add this origin here
-  "https://chitchat-by-aleeza.railway.app", // If you're hosting on Railway
+  "https://chit-chat-by-aleeza-s73i-8y0npdets-aleeze123s-projects.vercel.app", // Add the exact frontend URL here
+  "https://chitchat-by-aleeza.railway.app", // Railway URL
 ];
 
 // ✅ Middleware setup
@@ -28,7 +28,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: allowedOrigins,  // Dynamic CORS origins
+    origin: allowedOrigins,  // Allow the correct origin
     credentials: true,  // Allow cookies and other credentials
   })
 );
@@ -50,5 +50,5 @@ if (process.env.NODE_ENV === "production") {
 // ✅ Start the HTTP server and WebSocket server
 server.listen(PORT, () => {
   console.log("Server is running on PORT:" + PORT);
-  connectDB();  // Make sure to connect to the database
+  connectDB();  // Ensure DB connection is established
 });
