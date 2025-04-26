@@ -53,8 +53,6 @@
 //   connectDB();  // Ensure DB connection is established
 // });
 
-
-
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -81,13 +79,13 @@ const isDev = process.env.NODE_ENV === "development";
 const devOrigins = [
   "http://localhost:5173",  // Vite default
   "http://127.0.0.1:5173",
-  "http://localhost:3000",  // Create-react-app default
+  "http://localhost:3000",  // CRA default
 ];
 
 // 🚀 Production Origins
 const prodOrigins = [
   process.env.FRONTEND_URL,
-  "https://chit-chat-by-aleeza-s73i.vercel.app"
+  process.env.FRONTEND_URL_PREVIEW,
 ].filter(Boolean);
 
 // ✅ Dynamic CORS Configuration
@@ -101,41 +99,33 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// 🛡️ Enhanced CORS with Development Flexibility
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, curl, etc)
-      if (!origin && isDev) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`🚨 CORS Blocked: ${origin || "No origin"}`);
-        callback(isDev ? null : new Error("Not allowed by CORS"), isDev);
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
-  })
-);
-
-// ✈️ Preflight Handling
-app.options("*", cors());
+// 🛡️ CORS
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin && isDev) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`🚨 CORS Blocked: ${origin || "No Origin"}`);
+      callback(isDev ? null : new Error("Not allowed by CORS"), isDev);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+}));
 
 // 🚦 Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// 📦 Static Files (Only in Production)
+// 📦 Serve frontend in production
 if (!isDev) {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
   });
 } else {
-  // 🛠️ Development-only routes
   app.get("/api/dev", (req, res) => {
     res.json({
       status: "Development Mode",
@@ -154,7 +144,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 🏁 Server Start
+// 🏁 Start Server
 server.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`🔵 Mode: ${isDev ? "DEVELOPMENT" : "PRODUCTION"}`);
