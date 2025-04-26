@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://chit-chat-by-aleeza-s73i-e841d3xz4-aleeze123s-projects.vercel.app/"],
+    origin: ["https://chit-chat-by-aleeza-s73i.vercel.app/"],
   },
 });
 
