@@ -55,7 +55,6 @@
 
 
 
-
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -71,77 +70,104 @@ import { app, server } from "./lib/socket.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 
-// Configuration
+// Configurations
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 5001;
+const isDev = process.env.NODE_ENV === "development";
 
-// ✅ CORS Configuration
-const allowedOrigins = [
+// 🌈 Development-Specific Configurations
+const devOrigins = [
+  "http://localhost:5173",  // Vite default
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",  // Create-react-app default
+];
+
+// 🚀 Production Origins
+const prodOrigins = [
   process.env.FRONTEND_URL,
-  "https://chit-chat-by-aleeza-s73i.vercel.app",
-  "http://localhost:5173",
+  "https://chit-chat-by-aleeza-s73i.vercel.app"
 ].filter(Boolean);
 
+// ✅ Dynamic CORS Configuration
+const allowedOrigins = isDev ? [...devOrigins, ...prodOrigins] : prodOrigins;
+
+console.log(`🌍 ${isDev ? "Development" : "Production"} Mode Activated`);
 console.log("🔄 Allowed Origins:", allowedOrigins);
 
-// ✅ Middleware Setup
+// 🔥 Middleware Stack
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// Enhanced CORS middleware
+// 🛡️ Enhanced CORS with Development Flexibility
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin (mobile apps, curl, etc)
+      if (!origin && isDev) return callback(null, true);
       
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.warn(`🚨 CORS Blocked: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
+        console.warn(`🚨 CORS Blocked: ${origin || "No origin"}`);
+        callback(isDev ? null : new Error("Not allowed by CORS"), isDev);
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 );
 
-// Handle preflight requests
+// ✈️ Preflight Handling
 app.options("*", cors());
 
-// ✅ Routes
+// 🚦 Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// ✅ Serve Frontend in Production
-if (process.env.NODE_ENV === "production") {
+// 📦 Static Files (Only in Production)
+if (!isDev) {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
   });
+} else {
+  // 🛠️ Development-only routes
+  app.get("/api/dev", (req, res) => {
+    res.json({
+      status: "Development Mode",
+      message: "CORS is more permissive in development",
+      allowedOrigins
+    });
+  });
 }
 
-// ✅ Error Handling Middleware
+// 💣 Error Handling
 app.use((err, req, res, next) => {
   console.error("🔥 Error:", err.stack);
-  res.status(500).json({ error: "Something went wrong!" });
+  res.status(500).json({
+    error: isDev ? err.message : "Something went wrong!",
+    stack: isDev ? err.stack : undefined
+  });
 });
 
-// ✅ Start Server
+// 🏁 Server Start
 server.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🟢 Allowed origins: ${allowedOrigins.join(", ")}`);
-  connectDB().then(() => console.log("🟢 Database connected"));
+  console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`🔵 Mode: ${isDev ? "DEVELOPMENT" : "PRODUCTION"}`);
+  console.log(`🌐 Allowed origins:\n${allowedOrigins.map(o => `  - ${o}`).join("\n")}`);
+  connectDB().then(() => console.log("🟢 Database connected\n"));
 });
 
-// Handle unhandled promise rejections
+// 🚨 Crash Protection
 process.on("unhandledRejection", (err) => {
-  console.error("🚨 Unhandled Rejection:", err);
-  server.close(() => process.exit(1));
+  console.error("💥 Unhandled Rejection:", err);
+  if (isDev) {
+    console.warn("⚠️  Not exiting in development mode");
+  } else {
+    server.close(() => process.exit(1));
+  }
 });
